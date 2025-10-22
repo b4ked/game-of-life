@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Dashboard - Healthcare Analytics</title>
+    <title>Hospital Patient Management System - AI-Powered Healthcare Analytics</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,17 +15,29 @@
         <!-- Header -->
         <header class="dashboard-header">
             <div class="header-left">
-                <i class="fas fa-heartbeat"></i>
-                <h1>Medical Dashboard</h1>
+                <i class="fas fa-hospital"></i>
+                <h1>Patient Management System</h1>
+                <span class="department-badge">Cardiology Department</span>
             </div>
             <div class="header-right">
+                <div class="header-actions">
+                    <button class="btn-upload" id="uploadDataBtn">
+                        <i class="fas fa-upload"></i>
+                        Import Patient Data
+                    </button>
+                    <button class="btn-ai-insights" id="generateInsightsBtn">
+                        <i class="fas fa-brain"></i>
+                        AI Insights
+                    </button>
+                </div>
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search reports, patients..." id="searchInput">
+                    <input type="text" placeholder="Search patients, conditions, treatments..." id="searchInput">
                 </div>
                 <div class="user-profile">
                     <i class="fas fa-user-md"></i>
                     <span>Dr. Smith</span>
+                    <div class="role-badge">Department Head</div>
                 </div>
             </div>
         </header>
@@ -36,25 +48,33 @@
             <aside class="sidebar">
                 <nav class="sidebar-nav">
                     <ul>
-                        <li class="nav-item active">
+                        <li class="nav-item active" data-section="overview">
                             <i class="fas fa-chart-line"></i>
                             <span>Overview</span>
                         </li>
-                        <li class="nav-item">
-                            <i class="fas fa-file-medical"></i>
-                            <span>Reports</span>
-                        </li>
-                        <li class="nav-item">
+                        <li class="nav-item" data-section="patients">
                             <i class="fas fa-users"></i>
                             <span>Patients</span>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" data-section="care-plans">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>Care Plans</span>
+                        </li>
+                        <li class="nav-item" data-section="ai-insights">
+                            <i class="fas fa-brain"></i>
+                            <span>AI Insights</span>
+                        </li>
+                        <li class="nav-item" data-section="analytics">
                             <i class="fas fa-chart-bar"></i>
                             <span>Analytics</span>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" data-section="alerts">
                             <i class="fas fa-bell"></i>
                             <span>Alerts</span>
+                        </li>
+                        <li class="nav-item" data-section="workflow">
+                            <i class="fas fa-tasks"></i>
+                            <span>Workflow</span>
                         </li>
                     </ul>
                 </nav>
@@ -69,19 +89,19 @@
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>Total Patients</h3>
-                            <p class="stat-number">1,247</p>
+                            <h3>Active Patients</h3>
+                            <p class="stat-number" id="totalPatients">1,247</p>
                             <span class="stat-change positive">+12% from last month</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-file-medical-alt"></i>
+                            <i class="fas fa-user-clock"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>Reports Generated</h3>
-                            <p class="stat-number">3,891</p>
-                            <span class="stat-change positive">+8% from last month</span>
+                            <h3>Awaiting Care</h3>
+                            <p class="stat-number" id="awaitingCare">47</p>
+                            <span class="stat-change negative">+5 since yesterday</span>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -89,36 +109,113 @@
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>Critical Cases</h3>
-                            <p class="stat-number">23</p>
+                            <h3>High Priority</h3>
+                            <p class="stat-number" id="highPriority">23</p>
                             <span class="stat-change negative">+3 new today</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-check-circle"></i>
+                            <i class="fas fa-brain"></i>
                         </div>
                         <div class="stat-content">
-                            <h3>Resolved Cases</h3>
-                            <p class="stat-number">156</p>
-                            <span class="stat-change positive">+15% this week</span>
+                            <h3>AI Recommendations</h3>
+                            <p class="stat-number" id="aiRecommendations">156</p>
+                            <span class="stat-change positive">Generated today</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-bed"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Bed Occupancy</h3>
+                            <p class="stat-number" id="bedOccupancy">87%</p>
+                            <span class="stat-change neutral">Optimal range</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Avg Wait Time</h3>
+                            <p class="stat-number" id="avgWaitTime">24m</p>
+                            <span class="stat-change positive">-8m from target</span>
                         </div>
                     </div>
                 </section>
 
                 <!-- Main Dashboard Content -->
                 <div class="dashboard-content">
-                    <!-- Recent Reports -->
-                    <section class="reports-section">
+                    <!-- AI Insights Section -->
+                    <section class="ai-insights-section" id="aiInsightsSection">
                         <div class="section-header">
-                            <h2>Recent Medical Reports</h2>
-                            <button class="btn-primary" id="addReportBtn">
-                                <i class="fas fa-plus"></i>
-                                Add Report
-                            </button>
+                            <h2>AI-Powered Clinical Insights</h2>
+                            <div class="header-actions">
+                                <button class="btn-secondary" id="refreshInsightsBtn">
+                                    <i class="fas fa-sync-alt"></i>
+                                    Refresh
+                                </button>
+                                <button class="btn-primary" id="generateReportBtn">
+                                    <i class="fas fa-file-export"></i>
+                                    Export Report
+                                </button>
+                            </div>
                         </div>
-                        <div class="reports-container" id="reportsContainer">
-                            <!-- Reports will be dynamically loaded here -->
+                        <div class="insights-container" id="insightsContainer">
+                            <!-- AI insights will be dynamically loaded here -->
+                        </div>
+                    </section>
+
+                    <!-- Patient Management Section -->
+                    <section class="patient-management-section" id="patientManagementSection">
+                        <div class="section-header">
+                            <h2>Patient Care Management</h2>
+                            <div class="filter-controls">
+                                <select id="priorityFilter">
+                                    <option value="all">All Priorities</option>
+                                    <option value="critical">Critical</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                                <select id="statusFilter">
+                                    <option value="all">All Statuses</option>
+                                    <option value="admitted">Admitted</option>
+                                    <option value="outpatient">Outpatient</option>
+                                    <option value="discharged">Discharged</option>
+                                    <option value="follow-up">Follow-up</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="patients-grid" id="patientsGrid">
+                            <!-- Patient cards will be dynamically loaded here -->
+                        </div>
+                    </section>
+
+                    <!-- Workflow Management Section -->
+                    <section class="workflow-section" id="workflowSection">
+                        <div class="section-header">
+                            <h2>Department Workflow</h2>
+                        </div>
+                        <div class="workflow-boards">
+                            <div class="workflow-column">
+                                <h3>Triage</h3>
+                                <div class="workflow-items" id="triageItems"></div>
+                            </div>
+                            <div class="workflow-column">
+                                <h3>In Treatment</h3>
+                                <div class="workflow-items" id="treatmentItems"></div>
+                            </div>
+                            <div class="workflow-column">
+                                <h3>Awaiting Results</h3>
+                                <div class="workflow-items" id="resultsItems"></div>
+                            </div>
+                            <div class="workflow-column">
+                                <h3>Ready for Discharge</h3>
+                                <div class="workflow-items" id="dischargeItems"></div>
+                            </div>
                         </div>
                     </section>
 
