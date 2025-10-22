@@ -1,15 +1,92 @@
-// Medical Dashboard JavaScript
+// Enhanced Medical Dashboard JavaScript for Hospital Department Management
 class MedicalDashboard {
     constructor() {
+        this.patients = [];
         this.reports = [];
         this.alerts = [];
         this.charts = {};
+        this.aiInsights = [];
+        this.departmentStats = {};
         
+        this.loadPatientData();
         this.initializeData();
         this.initializeEventListeners();
         this.initializeCharts();
+        this.generateAIInsights();
         this.renderReports();
         this.renderAlerts();
+        this.updateDepartmentStats();
+    }
+
+    // Load patient data from text file
+    async loadPatientData() {
+        try {
+            const response = await fetch('patients_data.txt');
+            const data = await response.text();
+            this.parsePatientData(data);
+        } catch (error) {
+            console.log('Using sample data - patient file not found');
+            this.loadSamplePatients();
+        }
+    }
+
+    // Parse patient data from text file
+    parsePatientData(data) {
+        const lines = data.trim().split('\n');
+        const headers = lines[0].split('|');
+        
+        this.patients = lines.slice(1).map(line => {
+            const values = line.split('|');
+            const patient = {};
+            headers.forEach((header, index) => {
+                patient[header.toLowerCase()] = values[index] || '';
+            });
+            return patient;
+        });
+        
+        console.log(`Loaded ${this.patients.length} patients from data file`);
+    }
+
+    // Load sample patients if file not available
+    loadSamplePatients() {
+        this.patients = [
+            {
+                patient_id: 'P001',
+                name: 'Sarah Johnson',
+                age: '45',
+                gender: 'Female',
+                admission_date: '2024-01-15',
+                diagnosis: 'Type 2 Diabetes',
+                severity: 'High',
+                vitals: 'BP:142/88,HR:78,Temp:98.6,O2:98%',
+                medications: 'Metformin 500mg,Lisinopril 10mg',
+                allergies: 'Penicillin',
+                notes: 'Elevated HbA1c 8.2%, requires dietary counseling',
+                last_visit: '2024-01-15',
+                doctor_assigned: 'Dr. Smith',
+                department: 'Endocrinology',
+                insurance: 'BlueCross',
+                emergency_contact: 'John Johnson (555-0101)'
+            },
+            {
+                patient_id: 'P002',
+                name: 'Michael Chen',
+                age: '32',
+                gender: 'Male',
+                admission_date: '2024-01-14',
+                diagnosis: 'Fractured Radius',
+                severity: 'Medium',
+                vitals: 'BP:120/80,HR:72,Temp:98.4,O2:99%',
+                medications: 'Ibuprofen 600mg,Acetaminophen',
+                allergies: 'None',
+                notes: 'Displaced fracture, cast applied, orthopedic follow-up needed',
+                last_visit: '2024-01-14',
+                doctor_assigned: 'Dr. Williams',
+                department: 'Orthopedics',
+                insurance: 'Aetna',
+                emergency_contact: 'Lisa Chen (555-0102)'
+            }
+        ];
     }
 
     // Initialize sample medical data
@@ -84,37 +161,67 @@ class MedicalDashboard {
             }
         ];
 
-        // Sample alerts
-        this.alerts = [
-            {
-                id: 1,
-                type: "critical",
-                title: "Critical Lab Values",
-                message: "Patient P005 - Troponin levels critically elevated",
-                time: "5 minutes ago"
-            },
-            {
-                id: 2,
-                type: "warning",
-                title: "Medication Alert",
-                message: "Patient P001 - Metformin dosage adjustment needed",
-                time: "15 minutes ago"
-            },
-            {
-                id: 3,
-                type: "info",
-                title: "Appointment Reminder",
-                message: "Dr. Smith - 3 patients scheduled for tomorrow",
-                time: "1 hour ago"
-            },
-            {
-                id: 4,
-                type: "warning",
-                title: "Equipment Maintenance",
-                message: "MRI Machine #2 scheduled for maintenance",
-                time: "2 hours ago"
+        // Generate dynamic alerts based on patient data
+        this.generateAlerts();
+    }
+
+    // Generate alerts based on patient data
+    generateAlerts() {
+        this.alerts = [];
+        let alertId = 1;
+
+        // Critical patients alerts
+        const criticalPatients = this.patients.filter(p => p.severity?.toLowerCase() === 'critical');
+        criticalPatients.forEach(patient => {
+            this.alerts.push({
+                id: alertId++,
+                type: 'critical',
+                title: 'Critical Patient Alert',
+                message: `${patient.name} (${patient.patient_id}) - ${patient.diagnosis} requires immediate attention`,
+                time: this.getTimeAgo(patient.admission_date),
+                patientId: patient.patient_id
+            });
+        });
+
+        // High severity patients
+        const highSeverityPatients = this.patients.filter(p => p.severity?.toLowerCase() === 'high');
+        highSeverityPatients.slice(0, 3).forEach(patient => {
+            this.alerts.push({
+                id: alertId++,
+                type: 'warning',
+                title: 'High Priority Patient',
+                message: `${patient.name} - ${patient.diagnosis} needs monitoring`,
+                time: this.getTimeAgo(patient.admission_date),
+                patientId: patient.patient_id
+            });
+        });
+
+        // Medication alerts for patients with allergies
+        const patientsWithAllergies = this.patients.filter(p => p.allergies && p.allergies !== 'None');
+        patientsWithAllergies.slice(0, 2).forEach(patient => {
+            this.alerts.push({
+                id: alertId++,
+                type: 'warning',
+                title: 'Allergy Alert',
+                message: `${patient.name} - Allergic to ${patient.allergies}. Check medications.`,
+                time: '30 minutes ago',
+                patientId: patient.patient_id
+            });
+        });
+
+        // Department capacity alerts
+        const departmentCounts = this.getDepartmentPatientCounts();
+        Object.entries(departmentCounts).forEach(([dept, count]) => {
+            if (count > 3) {
+                this.alerts.push({
+                    id: alertId++,
+                    type: 'info',
+                    title: 'Department Capacity',
+                    message: `${dept} department has ${count} active patients`,
+                    time: '1 hour ago'
+                });
             }
-        ];
+        });
     }
 
     // Initialize event listeners
@@ -403,16 +510,48 @@ class MedicalDashboard {
         this.updateStats();
     }
 
-    // Handle search
+    // Handle search across patients and reports
     handleSearch(query) {
-        const filteredReports = this.reports.filter(report => 
-            report.patientName.toLowerCase().includes(query.toLowerCase()) ||
-            report.patientId.toLowerCase().includes(query.toLowerCase()) ||
-            report.diagnosis.toLowerCase().includes(query.toLowerCase()) ||
-            report.reportText.toLowerCase().includes(query.toLowerCase())
+        if (!query.trim()) {
+            this.renderReports();
+            return;
+        }
+
+        const searchTerm = query.toLowerCase();
+        
+        // Search in patients data
+        const filteredPatients = this.patients.filter(patient => 
+            patient.name?.toLowerCase().includes(searchTerm) ||
+            patient.patient_id?.toLowerCase().includes(searchTerm) ||
+            patient.diagnosis?.toLowerCase().includes(searchTerm) ||
+            patient.department?.toLowerCase().includes(searchTerm) ||
+            patient.doctor_assigned?.toLowerCase().includes(searchTerm)
         );
 
-        this.renderFilteredReports(filteredReports);
+        // Convert patients to report format for display
+        const patientReports = filteredPatients.map(patient => ({
+            id: patient.patient_id,
+            patientName: patient.name,
+            patientId: patient.patient_id,
+            reportType: 'patient-record',
+            diagnosis: patient.diagnosis,
+            reportText: `${patient.notes} | Vitals: ${patient.vitals} | Medications: ${patient.medications}`,
+            severity: patient.severity?.toLowerCase() || 'medium',
+            date: patient.admission_date,
+            doctor: patient.doctor_assigned
+        }));
+
+        // Also search in existing reports
+        const filteredReports = this.reports.filter(report => 
+            report.patientName?.toLowerCase().includes(searchTerm) ||
+            report.patientId?.toLowerCase().includes(searchTerm) ||
+            report.diagnosis?.toLowerCase().includes(searchTerm) ||
+            report.reportText?.toLowerCase().includes(searchTerm)
+        );
+
+        // Combine and render results
+        const allResults = [...patientReports, ...filteredReports];
+        this.renderFilteredReports(allResults);
     }
 
     // Render filtered reports
@@ -509,11 +648,11 @@ class MedicalDashboard {
     }
 
     updateStats() {
-        // Update statistics based on current data
-        const totalPatients = new Set(this.reports.map(r => r.patientId)).size;
-        const totalReports = this.reports.length;
-        const criticalCases = this.reports.filter(r => r.severity === 'critical').length;
-        const resolvedCases = Math.floor(totalReports * 0.7); // Simulate resolved cases
+        // Update statistics based on patient data
+        const totalPatients = this.patients.length;
+        const totalReports = this.reports.length + this.patients.length; // Include patient records
+        const criticalCases = this.patients.filter(p => p.severity?.toLowerCase() === 'critical').length;
+        const resolvedCases = Math.floor(totalPatients * 0.65); // Simulate resolved cases
 
         // Update DOM elements
         const statNumbers = document.querySelectorAll('.stat-number');
@@ -523,6 +662,188 @@ class MedicalDashboard {
             statNumbers[2].textContent = criticalCases.toString();
             statNumbers[3].textContent = resolvedCases.toString();
         }
+        
+        // Update department statistics
+        this.updateDepartmentStats();
+    }
+    
+    // Update department-wide statistics
+    updateDepartmentStats() {
+        this.departmentStats = {
+            totalPatients: this.patients.length,
+            departmentCounts: this.getDepartmentPatientCounts(),
+            averageAge: this.getAverageAge(),
+            criticalPatients: this.patients.filter(p => p.severity?.toLowerCase() === 'critical').length,
+            highRiskPatients: this.patients.filter(p => ['critical', 'high'].includes(p.severity?.toLowerCase())).length
+        };
+    }
+    
+    // Helper functions
+    getDepartmentPatientCounts() {
+        const counts = {};
+        this.patients.forEach(patient => {
+            const dept = patient.department || 'General';
+            counts[dept] = (counts[dept] || 0) + 1;
+        });
+        return counts;
+    }
+    
+    getAverageAge() {
+        const totalAge = this.patients.reduce((sum, patient) => {
+            return sum + (parseInt(patient.age) || 0);
+        }, 0);
+        return totalAge > 0 ? Math.round(totalAge / this.patients.length) : 0;
+    }
+    
+    getAverageStayByDepartment() {
+        const deptStays = {};
+        const deptCounts = {};
+        
+        this.patients.forEach(patient => {
+            const dept = patient.department || 'General';
+            const admissionDate = new Date(patient.admission_date);
+            const today = new Date();
+            const stayDays = Math.ceil((today - admissionDate) / (1000 * 60 * 60 * 24));
+            
+            deptStays[dept] = (deptStays[dept] || 0) + stayDays;
+            deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+        });
+        
+        const avgStays = {};
+        Object.keys(deptStays).forEach(dept => {
+            avgStays[dept] = Math.round(deptStays[dept] / deptCounts[dept]);
+        });
+        
+        return avgStays;
+    }
+    
+    getTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return '1 day ago';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+        return `${Math.ceil(diffDays / 30)} months ago`;
+    }
+
+    // Generate AI-powered insights
+    generateAIInsights() {
+        this.aiInsights = [
+            this.generateRiskAssessment(),
+            this.generateResourceAllocation(),
+            this.generateTreatmentRecommendations(),
+            this.generateDepartmentEfficiency(),
+            this.generatePatientFlowInsights()
+        ];
+    }
+
+    // Risk assessment insights
+    generateRiskAssessment() {
+        const criticalCount = this.patients.filter(p => p.severity?.toLowerCase() === 'critical').length;
+        const highCount = this.patients.filter(p => p.severity?.toLowerCase() === 'high').length;
+        const totalPatients = this.patients.length;
+        
+        const riskPercentage = ((criticalCount + highCount) / totalPatients * 100).toFixed(1);
+        
+        return {
+            type: 'risk-assessment',
+            title: 'Patient Risk Assessment',
+            insight: `${riskPercentage}% of patients are high-risk (${criticalCount} critical, ${highCount} high severity)`,
+            recommendation: criticalCount > 2 ? 
+                'Consider increasing ICU capacity and scheduling additional critical care staff.' :
+                'Current critical care capacity appears adequate. Monitor trends.',
+            priority: criticalCount > 2 ? 'high' : 'medium',
+            data: { criticalCount, highCount, totalPatients, riskPercentage }
+        };
+    }
+
+    // Resource allocation insights
+    generateResourceAllocation() {
+        const departmentCounts = this.getDepartmentPatientCounts();
+        const overloadedDepts = Object.entries(departmentCounts)
+            .filter(([dept, count]) => count > 4)
+            .map(([dept, count]) => `${dept} (${count} patients)`);
+        
+        return {
+            type: 'resource-allocation',
+            title: 'Department Resource Analysis',
+            insight: overloadedDepts.length > 0 ? 
+                `High patient load detected in: ${overloadedDepts.join(', ')}` :
+                'Patient load is well-distributed across departments',
+            recommendation: overloadedDepts.length > 0 ? 
+                'Consider redistributing staff or scheduling additional shifts for overloaded departments.' :
+                'Current resource allocation appears optimal.',
+            priority: overloadedDepts.length > 0 ? 'high' : 'low',
+            data: departmentCounts
+        };
+    }
+
+    // Treatment recommendations
+    generateTreatmentRecommendations() {
+        const commonDiagnoses = this.getCommonDiagnoses();
+        const topDiagnosis = commonDiagnoses[0];
+        
+        const recommendations = {
+            'Type 2 Diabetes': 'Consider implementing group diabetes education sessions and continuous glucose monitoring programs.',
+            'Hypertension': 'Recommend 24-hour blood pressure monitoring and lifestyle modification programs.',
+            'COPD': 'Implement pulmonary rehabilitation programs and smoking cessation support.',
+            'Pneumonia': 'Consider pneumonia prevention protocols and vaccination programs.'
+        };
+        
+        return {
+            type: 'treatment-recommendations',
+            title: 'Treatment Protocol Optimization',
+            insight: `Most common diagnosis: ${topDiagnosis?.diagnosis} (${topDiagnosis?.count} cases)`,
+            recommendation: recommendations[topDiagnosis?.diagnosis] || 
+                'Review treatment protocols for most common diagnoses to improve patient outcomes.',
+            priority: 'medium',
+            data: commonDiagnoses
+        };
+    }
+
+    // Department efficiency insights
+    generateDepartmentEfficiency() {
+        const avgStayByDept = this.getAverageStayByDepartment();
+        const longestStay = Object.entries(avgStayByDept)
+            .sort(([,a], [,b]) => b - a)[0];
+        
+        return {
+            type: 'department-efficiency',
+            title: 'Department Efficiency Analysis',
+            insight: longestStay ? 
+                `${longestStay[0]} has the longest average patient stay (${longestStay[1]} days)` :
+                'Department efficiency data being analyzed',
+            recommendation: longestStay && longestStay[1] > 5 ? 
+                'Review discharge planning and care coordination processes to reduce length of stay.' :
+                'Department efficiency appears within normal parameters.',
+            priority: longestStay && longestStay[1] > 7 ? 'high' : 'low',
+            data: avgStayByDept
+        };
+    }
+
+    // Patient flow insights
+    generatePatientFlowInsights() {
+        const recentAdmissions = this.patients.filter(p => {
+            const admissionDate = new Date(p.admission_date);
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            return admissionDate >= threeDaysAgo;
+        }).length;
+        
+        return {
+            type: 'patient-flow',
+            title: 'Patient Flow Analysis',
+            insight: `${recentAdmissions} new admissions in the last 3 days`,
+            recommendation: recentAdmissions > 10 ? 
+                'High admission rate detected. Consider bed management optimization and discharge planning acceleration.' :
+                'Patient flow is manageable. Continue monitoring admission trends.',
+            priority: recentAdmissions > 15 ? 'high' : 'medium',
+            data: { recentAdmissions, totalPatients: this.patients.length }
+        };
     }
 
     // Generate insights from medical reports
@@ -539,21 +860,45 @@ class MedicalDashboard {
 
     getCommonDiagnoses() {
         const diagnoses = {};
+        
+        // Count diagnoses from patients
+        this.patients.forEach(patient => {
+            if (patient.diagnosis) {
+                diagnoses[patient.diagnosis] = (diagnoses[patient.diagnosis] || 0) + 1;
+            }
+        });
+        
+        // Also count from reports
         this.reports.forEach(report => {
-            diagnoses[report.diagnosis] = (diagnoses[report.diagnosis] || 0) + 1;
+            if (report.diagnosis) {
+                diagnoses[report.diagnosis] = (diagnoses[report.diagnosis] || 0) + 1;
+            }
         });
 
         return Object.entries(diagnoses)
             .sort(([,a], [,b]) => b - a)
-            .slice(0, 5)
+            .slice(0, 6)
             .map(([diagnosis, count]) => ({ diagnosis, count }));
     }
 
     getSeverityDistribution() {
         const distribution = { low: 0, medium: 0, high: 0, critical: 0 };
-        this.reports.forEach(report => {
-            distribution[report.severity]++;
+        
+        // Count from patients
+        this.patients.forEach(patient => {
+            const severity = patient.severity?.toLowerCase() || 'medium';
+            if (distribution.hasOwnProperty(severity)) {
+                distribution[severity]++;
+            }
         });
+        
+        // Also count from reports
+        this.reports.forEach(report => {
+            if (report.severity && distribution.hasOwnProperty(report.severity)) {
+                distribution[report.severity]++;
+            }
+        });
+        
         return distribution;
     }
 
@@ -567,30 +912,47 @@ class MedicalDashboard {
     }
 
     getPatientDemographics() {
-        // Simulate demographic data
-        return {
-            ageGroups: {
-                '0-18': 15,
-                '19-35': 25,
-                '36-50': 30,
-                '51-65': 20,
-                '65+': 10
-            },
-            gender: {
-                male: 45,
-                female: 52,
-                other: 3
-            }
+        const ageGroups = {
+            '0-18': 0,
+            '19-35': 0,
+            '36-50': 0,
+            '51-65': 0,
+            '65+': 0
         };
+        
+        const gender = {
+            male: 0,
+            female: 0,
+            other: 0
+        };
+        
+        this.patients.forEach(patient => {
+            // Age grouping
+            const age = parseInt(patient.age);
+            if (age <= 18) ageGroups['0-18']++;
+            else if (age <= 35) ageGroups['19-35']++;
+            else if (age <= 50) ageGroups['36-50']++;
+            else if (age <= 65) ageGroups['51-65']++;
+            else ageGroups['65+']++;
+            
+            // Gender distribution
+            const genderLower = patient.gender?.toLowerCase();
+            if (genderLower === 'male') gender.male++;
+            else if (genderLower === 'female') gender.female++;
+            else gender.other++;
+        });
+        
+        return { ageGroups, gender };
     }
 }
 
 // Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const dashboard = new MedicalDashboard();
     
     // Make dashboard globally accessible for debugging
     window.medicalDashboard = dashboard;
     
-    console.log('Medical Dashboard initialized successfully');
+    console.log('Enhanced Medical Dashboard initialized successfully');
+    console.log(`Managing ${dashboard.patients.length} patients across multiple departments`);
 });
