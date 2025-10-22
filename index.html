@@ -3,31 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game of Life - Material Dark</title>
+    <title>Medical Dashboard - Patient Insights</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Game of Life</h1>
-        <div class="controls">
-            <button id="startBtn">Play</button>
-            <button id="pauseBtn">Pause</button>
-            <button id="resetBtn">Reset</button>
-            <div class="pattern-selector">
-                <label for="pattern">Pattern:</label>
-                <select id="pattern">
-                    <option value="random">Random</option>
-                    <option value="glider">Glider</option>
-                    <option value="blinker">Blinker</option>
-                    <option value="beacon">Beacon</option>
-                </select>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="#3B82F6"/>
+                        <path d="M16 8V24M10 16H22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    <h1>MedDash</h1>
+                </div>
             </div>
-        </div>
-        <canvas id="gameCanvas"></canvas>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="overview">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                    </svg>
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-view="reports">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
+                        <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                    </svg>
+                    <span>Reports</span>
+                </a>
+                <a href="#" class="nav-item" data-view="patients">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                    </svg>
+                    <span>Patients</span>
+                </a>
+                <a href="#" class="nav-item" data-view="analytics">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+                    </svg>
+                    <span>Analytics</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h2 id="viewTitle">Patient Overview</h2>
+                    <p class="header-subtitle">Real-time medical insights and reports</p>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                        </svg>
+                        <input type="text" id="searchInput" placeholder="Search patients, reports...">
+                    </div>
+                    <button class="icon-button" id="notificationBtn">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                        </svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content Views -->
+            <div id="contentArea" class="content-area">
+                <!-- Overview View (Default) -->
+                <div id="overviewView" class="view active">
+                    <!-- Metrics Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">Total Patients</span>
+                                <span class="metric-icon patients">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="metric-value">1,247</div>
+                            <div class="metric-change positive">+12% from last month</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">New Reports</span>
+                                <span class="metric-icon reports">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="metric-value">84</div>
+                            <div class="metric-change positive">+8% this week</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">Critical Cases</span>
+                                <span class="metric-icon critical">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="metric-value">7</div>
+                            <div class="metric-change negative">Requires attention</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-label">Avg Response Time</span>
+                                <span class="metric-icon time">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="metric-value">2.4h</div>
+                            <div class="metric-change positive">-15% improvement</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Reports Section -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3>Recent Medical Reports</h3>
+                            <button class="view-all-btn">View All</button>
+                        </div>
+                        <div id="recentReports" class="reports-list"></div>
+                    </div>
+
+                    <!-- Alerts Section -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3>Active Alerts</h3>
+                            <span class="alert-count">3</span>
+                        </div>
+                        <div id="alertsList" class="alerts-list"></div>
+                    </div>
+                </div>
+
+                <!-- Reports View -->
+                <div id="reportsView" class="view">
+                    <div class="filters-bar">
+                        <select id="reportTypeFilter" class="filter-select">
+                            <option value="all">All Report Types</option>
+                            <option value="lab">Laboratory</option>
+                            <option value="imaging">Imaging</option>
+                            <option value="pathology">Pathology</option>
+                            <option value="cardiology">Cardiology</option>
+                        </select>
+                        <select id="urgencyFilter" class="filter-select">
+                            <option value="all">All Urgencies</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="normal">Normal</option>
+                        </select>
+                        <select id="dateFilter" class="filter-select">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30">Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                    <div id="allReports" class="reports-grid"></div>
+                </div>
+
+                <!-- Patients View -->
+                <div id="patientsView" class="view">
+                    <div id="patientsList" class="patients-grid"></div>
+                </div>
+
+                <!-- Analytics View -->
+                <div id="analyticsView" class="view">
+                    <div class="analytics-grid">
+                        <div class="section-card">
+                            <h3>Report Distribution by Type</h3>
+                            <div id="reportDistribution" class="chart-container"></div>
+                        </div>
+                        <div class="section-card">
+                            <h3>Daily Report Volume (Last 30 Days)</h3>
+                            <div id="reportVolume" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
+
+    <!-- Report Detail Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Report Details</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
+    </div>
+
     <script src="game.js"></script>
 </body>
-</html> 
+</html>
